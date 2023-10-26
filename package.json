@@ -1,0 +1,38 @@
+{
+  "name": "laudofarmacia",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "scripts": {
+    "start": "nodemon --exec ts-node ./src/index.ts",
+    "compile": "tsc  -build",
+    "build": "pkg ./package.json",
+    "tst": "ncc build  -o build/lib ./src/index.js && pkg -node12-win-x64 ./dist/index.js"
+  },
+  "keywords": [],
+  "author": "Manoel Batista",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^16.11.10",
+    "nodemon": "^3.0.1",
+    "ts-node": "10.7.0",
+    "typescript": "4.5.2"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "ejs": "^3.1.9",
+    "express": "^4.18.2",
+    "reflect-metadata": "^0.1.13",
+    "sqlite3": "^5.1.6",
+    "typeorm": "0.3.17"
+  },
+  "bin": "./dist/index.js",
+  "pkg": {
+    "scripts": "build/**/*.js",
+    "assets": "./views/**/*.*",
+    "targets": [
+      "node12"
+    ],
+    "outputPath": "build"
+  }
+}
