@@ -13,8 +13,10 @@ AppDataSource.initialize().then(async () => {
     app.use(express.static(__dirname + '/../public'));
 
 
-    console.log(await AppDataSource.getRepository(User).find());
-    
+    app.get('/', (req: express.Request, res: express.Response)=>{
+        return res.render('index');
+    })
+
     return app.listen(port, () => console.log(`Server is listem on: ${port}`));
     
 }).catch(error => console.log(error))
