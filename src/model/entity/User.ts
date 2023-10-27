@@ -1,5 +1,9 @@
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
 
+export enum sexo{
+    M='MALE',F='FEMALE'
+}
+
 @Entity()
 export class User {
 
@@ -9,16 +13,14 @@ export class User {
     nome: string;
     @Column()
     cpf: string;
-    @Column()
+    @Column({nullable: true})
     idade: number;
     @Column()
     endereco: string;
-    @Column()
-    numero: string
+    @Column({nullable: true})
+    endereco_numero: string
     @Column()
     telefone: string;
-
-
-    
-
+    @Column({enum: sexo})
+    sexo: sexo;
 }

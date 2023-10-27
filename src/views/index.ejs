@@ -15,6 +15,8 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"
         integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <!-- <script src="https://cdn.jsdelivr.net/gh/xcash/bootstrap-autocomplete@v2.3.7/dist/latest/bootstrap-autocomplete.min.js"></script> -->
     <!--  -->
     <style>
         * {
@@ -112,18 +114,121 @@
         /* .reftb {} */
     </style>
     <script>
+        class user {
+            constructor(id, nome, cpf, idade, endereco, endereco_numero, telefone, sexo) {
+                this.id = id;
+                this.nome = nome;
+                this.cpf = cpf;
+                this.idade = idade;
+                this.endereco = endereco;
+                this.endereco_numero = endereco_numero;
+                this.telefone = telefone;
+                this.sexo = sexo;
+            }
+        }
+        class Resultado{
+            constructor(colesterol, hdl, triglicerides, ldl){
+                this.colesterol = colesterol;
+                this.hdl=hdl;
+                this.triglicerides = triglicerides;
+                this.ldl =ldl;
+            }
+        }
+
+        class Laudo{
+            constructor(queixa, data, resultado){
+                this.queixa = queixa;
+                this.data = data;
+                this.resultado = new Resultado();
+                this.resultado = resultado;
+
+            }
+        }
+        
+
+
+        let users = [user];
+        let usuarioNovo = new user();
+        let resultadoNovo = new Laudo();
+
+        function setUser(user) {
+            if (!user) {
+                alert('Paciente não é válido!')
+            }
+
+            $('#name').val(user.nome);
+            $('#cpf').val(user.cpf);
+            $('#end').val(user.endereco);
+            let m = $('#male');
+            let f = $('#female');
+            
+            if(user.sexo === 'FEMALE'){
+                m.prop('checked', false)
+                f.prop('checked', true)
+            }else{
+                f.prop('checked', false)
+                m.prop('checked', true)
+            }
+
+            $('#number').val(user.telefone)
+            $('#n').val(user.endereco_numero)
+        }
+
         setTimeout(() => {
             $('#date').val(new Date().toISOString().split("T")[0])
         }, 150);
+    </script>
+    <script type="module">
+        import Autocomplete from "https://cdn.jsdelivr.net/gh/lekoala/bootstrap5-autocomplete@master/autocomplete.js";
+        const inpCpf = document.getElementById('cpf');
+
+        new Autocomplete(inpCpf, {
+            source: (qry, callback) => {
+                fetch(`/data/find_user?cpf=${qry}`, {
+                    method: 'GET',
+                }).then(async res => {
+                    if (res.status == 200) {
+                        const json = await res.json();
+                        users = json;
+                        callback(json.map(j => j['cpf']))
+                    }
+                })
+            },
+            onSelectItem: (value) => {
+                setUser(users.find(v => v.cpf === value.label))
+            }
+        });
+
+        const inpNome = document.getElementById('name');
+
+        new Autocomplete(inpNome, {
+            source: (qry, callback) => {
+                fetch(`/data/find_user?nome=${qry}`, {
+                    method: 'GET',
+                }).then(async res => {
+                    if (res.status == 200) {
+                        const json = await res.json();
+                        users = json;
+                        callback(json.map(j => j['nome']))
+                    }
+                })
+            },
+            onSelectItem: (value) => {
+                setUser(users.find(v => v.nome === value.label))
+            }
+        })
     </script>
 </head>
 
 <body>
     <div class="container p-1 shadown box mt-2"
         style="border-bottom: 3px solid var(--border-color); background-color: #f1f1f1;">
-        <div class="row m-0 ps-1"
+        <div class="row m-0 ps-1 pt-1"
             style="border-top: 5px solid var(--border-color); color: #d8120f; font-weight: bolder;">
-            <h1>Sua logo aqui</h1>
+            <div class="col">
+                <img src="/logo.jpeg" alt="" height="100">
+            </div>
+            <div class="col"></div>
         </div>
         <div class="row g-0 m-0 p-2 pb-0">
             <div class="col-8 p-2 me-1 form-top">
@@ -134,17 +239,17 @@
             <div class="col p-2 form-top ms-1">
                 <label class="form-label lbl" for="sex">Sexo</label>
                 <div class="form-group  d-flex flex-row justify-content-center" id="sex">
-                    <div class="form-check me-2">
+                    <div class="form-check me-2" title="Feminino">
                         <input class="form-check-input inp-head" checked type="radio" name="flexRadioDefault"
                             id="female">
-                        <label class="form-check-label" for="old-value">
+                        <label class="form-check-label" for="female">
                             <i class="bi bi-gender-female"></i>
                         </label>
 
                     </div>
-                    <div class="form-check">
+                    <div class="form-check" title="Masculino">
                         <input class="form-check-input inp-head" type="radio" name="flexRadioDefault" id="male">
-                        <label class="form-check-label" for="new-value">
+                        <label class="form-check-label" for="male">
                             <i class="bi bi-gender-male"></i>
                         </label>
                     </div>
@@ -162,8 +267,9 @@
                 <input class="form-control inp-head" type="text" id="n">
             </div>
         </div>
+
         <div class="row g-0 m-0 p-2 pb-0">
-            <div class="col-8 p-2 me-1 form-top">
+            <div class="col-8 p-2 me-1 form-top" id="displayValue">
                 <label class="form-label lbl" for="cpf">CPF</label>
                 <input class="form-control inp-head" type="text" id="cpf">
             </div>
@@ -371,6 +477,12 @@
                     </p>
                 </div>
                 <div class="col"></div>
+            </div>
+        </div>
+        <div class="row g-0 m-0 mt-2 me-4">
+            <div class="col-8"></div>
+            <div class="col d-flex flex-row justify-content-end">
+                <button type="button" class="btn btn-primary">Gerar impressao</button>
             </div>
         </div>
     </div>
