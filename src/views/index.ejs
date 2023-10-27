@@ -126,30 +126,29 @@
                 this.sexo = sexo;
             }
         }
-        class Resultado{
-            constructor(colesterol, hdl, triglicerides, ldl){
+        class Resultado {
+            constructor(colesterol, hdl, triglicerides, ldl) {
                 this.colesterol = colesterol;
-                this.hdl=hdl;
+                this.hdl = hdl;
                 this.triglicerides = triglicerides;
-                this.ldl =ldl;
+                this.ldl = ldl;
             }
         }
 
-        class Laudo{
-            constructor(queixa, data, resultado){
+        class Laudo {
+            constructor(queixa, data, resultado) {
                 this.queixa = queixa;
                 this.data = data;
                 this.resultado = new Resultado();
                 this.resultado = resultado;
-
             }
         }
-        
+
 
 
         let users = [user];
-        let usuarioNovo = new user();
-        let resultadoNovo = new Laudo();
+        let usuarioAtual = new user();
+        let resultadoAtual = new Laudo();
 
         function setUser(user) {
             if (!user) {
@@ -161,21 +160,206 @@
             $('#end').val(user.endereco);
             let m = $('#male');
             let f = $('#female');
-            
-            if(user.sexo === 'FEMALE'){
+
+            if (user.sexo === 'FEMALE') {
                 m.prop('checked', false)
                 f.prop('checked', true)
-            }else{
+            } else {
                 f.prop('checked', false)
                 m.prop('checked', true)
             }
 
             $('#number').val(user.telefone)
             $('#n').val(user.endereco_numero)
+            usuarioAtual = user;
+        }
+
+        function setLaudo(laudo) {
+            if (!laudo) {
+                alert('laudo não é válido!')
+            }
+        }
+
+
+        function init() {
+
+            if (!resultadoAtual.resultado) {
+                resultadoAtual.resultado = new Resultado();
+            }
+
+            initUser();
+            initLaudo();
+
+            $('#gen').on('click', (event) => {
+                fetch('/data/save_user', {
+                    method: 'POST',
+                    body: JSON.stringify(usuarioAtual),
+                    headers: {
+                        "Content-Type": "application/json;charset=utf-8"
+                    }
+                }).catch(err => alert(err.message))
+
+                resultadoAtual['json'] = JSON.stringify(resultadoAtual.resultado);
+                
+
+                fetch('/data/save_laudo', {
+                    method: 'POST',
+                    body: JSON.stringify(resultadoAtual),
+                    headers: {
+                        "Content-Type": "application/json;charset=utf-8"
+                    }
+                }).catch(err => alert(err.message))
+            })
+
+            $('#date').val(new Date().toISOString().split("T")[0])
+            if(!resultadoAtual.data){
+                resultadoAtual.data = new Date($('#date').val());
+            }
+        }
+
+        function getAllAndSet() {
+            const userFields = ['name', ]
+        }
+
+        function initLaudo() {
+            $('#data').on('change', (event) => {
+                let value = $('#' + event.target.id).val();
+                resultadoAtual.data = new Date(value);
+            })
+            $('#queixa').on('keyup', (event) => {
+                changeLaudo(event, undefined, 'queixa')
+            })
+            $('#colesterol').on('keyup', (event) => {
+                changeResultado(event, undefined, 'colesterol')
+            })
+            $('#hdl').on('keyup', (event) => {
+                changeResultado(event, undefined, 'hdl')
+            })
+            $('#triglicerides').on('keyup', (event) => {
+                changeResultado(event, undefined, 'triglicerides')
+            })
+            $('#ldl').on('keyup', (event) => {
+                changeResultado(event, undefined, 'ldl')
+            })
+
+        }
+
+
+        function initUser() {
+            $('#name').on('keyup', (event) => {
+                changeUser(event, undefined, 'nome')
+            });
+
+            $('#male').on('change', (event) => {
+                if ($('#male').is(':checked'))
+                    usuarioAtual.sexo = 'MALE'
+            })
+
+            $('#female').on('change', (event) => {
+                if ($('#female').is(':checked'))
+                    usuarioAtual.sexo = 'FEMALE'
+            })
+
+            $('#end').on('keyup', (event) => {
+                changeUser(event, undefined, 'endereco')
+            })
+
+            $('#n').on('keyup', (event) => {
+                changeUser(event, undefined, 'endereco_numero')
+            })
+
+            $('#number').on('keyup', (event) => {
+                changeUser(event, (value) => {
+                    let aux = value.replace(/[^0-9]/g, '').split('');
+                    let ret = '';
+                    for (let i = 0; i < aux.length; i++) {
+                        if (i == 0) {
+                            ret = ret.concat('(');
+                        }
+                        if (i == 2) {
+                            ret = ret.concat(') ');
+                        }
+                        if (i == 3) {
+                            ret = ret.concat(' ');
+                        }
+                        if (i == 7) {
+                            ret = ret.concat('-');
+                        }
+                        ret = ret.concat(aux[i]);
+                    }
+                    $('#number').val(ret ? ret : value)
+                    return ret ? ret : value;
+                }, 'telefone')
+            })
+
+            $('#cpf').on('keyup', (event) => {
+                changeUser(event, (value) => {
+                    let vl = value ? new String(value).valueOf().replace(/[^0-9]/g, '') : '';
+                    const split = vl.split('');
+                    let retorno = '';
+                    if (split.length <= 11 && split.length > 0) {
+                        for (let i = 0; i < split.length; i++) {
+                            if (i == 3) {
+                                retorno += '.';
+                            }
+                            if (i == 6) {
+                                retorno += '.';
+                            }
+                            if (i == 9) {
+                                retorno += '-';
+                            }
+                            retorno += split[i];
+                        }
+                    } else {
+                        for (let i = 0; i < split.length; i++) {
+                            if (i == 2) {
+                                retorno += '.';
+                            }
+                            if (i == 5) {
+                                retorno += '.';
+                            }
+                            if (i == 8) {
+                                retorno += '/';
+                            }
+                            if (i == 12) {
+                                retorno += '-';
+                            }
+                            retorno += split[i];
+                        }
+                    }
+
+                    $('#cpf').val(retorno ? retorno : value)
+                    return retorno ? retorno : value;
+                }, 'cpf')
+            })
+        }
+
+        function changeUser(event, mask, field) {
+            let value = $('#' + event.target.id).val();
+            if (mask) {
+                mask(value);
+            }
+            usuarioAtual[field] = value;
+        }
+
+        function changeLaudo(event, mask, field) {
+            let value = $('#' + event.target.id).val();
+            if (mask) {
+                mask(value);
+            }
+            resultadoAtual[field] = value;
+        }
+
+        function changeResultado(event, mask, field) {
+            let value = $('#' + event.target.id).val();
+            if (mask) {
+                mask(value);
+            }
+            resultadoAtual.resultado[field] = value;
         }
 
         setTimeout(() => {
-            $('#date').val(new Date().toISOString().split("T")[0])
+            init()
         }, 150);
     </script>
     <script type="module">
@@ -184,7 +368,7 @@
 
         new Autocomplete(inpCpf, {
             source: (qry, callback) => {
-                fetch(`/data/find_user?cpf=${qry}`, {
+                fetch(`/data/find_user?cpf=${qry.replace(/[^0-9]/g, '')}`, {
                     method: 'GET',
                 }).then(async res => {
                     if (res.status == 200) {
@@ -286,7 +470,7 @@
                 <label for="area-wrapper" class="form-label lbl"> Queixa principal e Histórico do paciênte</label>
             </div>
             <div class="form-floating" id="area-wrapper">
-                <textarea class="form-control p-1 inp-head" name="" id="sqlArea">
+                <textarea class="form-control p-1 inp-head" name="" id="queixa">
                 </textarea>
             </div>
         </div>
@@ -310,10 +494,10 @@
                     <tbody>
                         <tr>
                             <td><input class="form-control inp" type="date" id="date"></td>
-                            <td><input class="form-control inp" type="number"></td>
-                            <td><input class="form-control inp" type="number"></td>
-                            <td><input class="form-control inp" type="number"></td>
-                            <td><input class="form-control inp" type="number"></td>
+                            <td><input class="form-control inp" type="number" id="colesterol"></td>
+                            <td><input class="form-control inp" type="number" id="hdl"></td>
+                            <td><input class="form-control inp" type="number" id="triglicerides"></td>
+                            <td><input class="form-control inp" type="number" id="ldl"></td>
                         </tr>
                     </tbody>
                 </table>
@@ -482,7 +666,7 @@
         <div class="row g-0 m-0 mt-2 me-4">
             <div class="col-8"></div>
             <div class="col d-flex flex-row justify-content-end">
-                <button type="button" class="btn btn-primary">Gerar impressao</button>
+                <button type="button" class="btn btn-primary" id="gen">Gerar impressao</button>
             </div>
         </div>
     </div>

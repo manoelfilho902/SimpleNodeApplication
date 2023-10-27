@@ -24,7 +24,7 @@ export class main {
         let where = isValid(req.query.cpf) ? { cpf: Like((req.query.cpf as string).replace(/[^0-9]/, '').concat('%')) } : (
             isValid(req.query.nome) ? { nome: ILike((req.query.nome as string).concat('%')) } : undefined
         )
-        main.repositories.user.find({ where: where}).then(lst => {
+        main.repositories.user.find({ where: where }).then(lst => {
             res.status(200).send(lst);
         }).catch(err => next(err))
 
@@ -34,17 +34,26 @@ export class main {
         if (!isValid(req.body)) {
             return res.status(400).send('Usuário inválido!');
         }
-        main.repositories.user.save(req.body).catch(err => next(err));
+        main.repositories.user.save(req.body).then(() => res.status(200).send()
+        ).catch(err => next(err));
+
     }
 
-
+    saveLaudo(req: TypedRequestBody<Laudo>, res: Response, next: NextFunction) {
+        if (!isValid(req.body)) {
+            return res.status(400).send('Laudo inválido!');
+        }
+        main.repositories.laudo.save(req.body).then(() => res.status(200).send()
+        ).catch(err => next(err));
+    }
 }
 
 export const MainRouter = Router();
 const controller = new main();
 
 MainRouter.get('/find_user', controller.findUser);
-MainRouter.post('/save_user', controller.findUser);
+MainRouter.post('/save_user', controller.saveUser);
+MainRouter.post('/save_laudo', controller.saveLaudo)
 
 
 export default MainRouter;
