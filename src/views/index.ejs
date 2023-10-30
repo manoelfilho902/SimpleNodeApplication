@@ -197,11 +197,14 @@
                 alert('Paciente não é válido!')
             }
 
-            $('#name').val(user.nome);
-            $('#cpf').val(cpfFomatter(user.cpf));
-            $('#end').val(user.endereco);
+            $('#name').val(user.nome ? user.nome : '');
+            $('#cpf').val(user.cpf ? cpfFomatter(user.cpf) : '');
+            $('#end').val(user.endereco ? user.endereco : '');
             let m = $('#male');
             let f = $('#female');
+            if (!user.sexo) {
+                user.sexo = 'FEMALE'
+            }
 
             if (user.sexo === 'FEMALE') {
                 m.prop('checked', false)
@@ -211,8 +214,8 @@
                 m.prop('checked', true)
             }
 
-            $('#number').val(celularFormatter(user.telefone))
-            $('#n').val(user.endereco_numero)
+            $('#number').val(user.telefone ? celularFormatter(user.telefone) : '')
+            $('#n').val(user.endereco_numero ? user.endereco_numero : '')
             usuarioAtual = user;
         }
 
@@ -222,13 +225,13 @@
             }
             resultadoAtual = laudo;
 
-            const resultado = laudo['resultado']
-            $('#queixa').val(laudo['queixa']);
-            $('#date').val(laudo['data'].split("T")[0]);
-            $('#colesterol').val(resultado['colesterol']);
-            $('#hdl').val(resultado['hdl']);
-            $('#triglicerides').val(resultado['triglicerides']);
-            $('#ldl').val(resultado['ldl']);
+            const resultado = laudo.resultado ? laudo.resultado : new Resultado()
+            $('#queixa').val(laudo['queixa'] ? laudo['queixa'] : '');
+            $('#date').val(laudo['data'] ? laudo['data'].split("T")[0] : new Date().toISOString().split("T")[0]);
+            $('#colesterol').val(resultado.colesterol ? resultado['colesterol'] : '');
+            $('#hdl').val(resultado.hdl ? resultado['hdl'] : '');
+            $('#triglicerides').val(resultado.triglicerides ? resultado['triglicerides'] : '');
+            $('#ldl').val(resultado.ldl ? resultado['ldl'] : '');
         }
 
 
@@ -253,16 +256,20 @@
                     }).catch(err => alert(err.message))
 
                     resultadoAtual['json'] = JSON.stringify(resultadoAtual.resultado);
-                    const user = await res.json();
-                    resultadoAtual['idUsuario'] = user['id'];
+                    const u = await res.json();
+                    resultadoAtual['idUsuario'] = u['id'];
+                    resultadoAtual['id'] = undefined;
+
                     fetch('/data/save_laudo', {
                         method: 'POST',
                         body: JSON.stringify(resultadoAtual),
                         headers: {
                             "Content-Type": "application/json;charset=utf-8"
                         }
-                    }).then(res =>{
+                    }).then(res => {
                         window.print();
+                        setUser(new user());
+                        setLaudo(new Laudo());
                     }).catch(err => alert(err.message))
                 })
             });
@@ -306,15 +313,13 @@
 
                     }
                 } else if (key === 'cpf' || key == 'telefone') {
-                    if (!usuarioAtual[key]) {
-                        const v2 = $(`#${v}`);
-                        usuarioAtual[key] = v2 ? v2.val().replace(/[^0-9]/g) : '';
-                    }
+                    const v2 = $(`#${v}`);
+                    usuarioAtual[key] = v2 ? v2.val().replace(/[^0-9]/g) : '';
+
                 } else {
-                    if (!usuarioAtual[key]) {
-                        const v2 = $(`#${v}`);
-                        usuarioAtual[key] = v2 ? v2.val() : '';
-                    }
+                    const v2 = $(`#${v}`);
+                    usuarioAtual[key] = v2 ? v2.val() : '';
+
                 }
             }
 
@@ -334,10 +339,10 @@
 
             for (let key of resultadoFieds.keys()) {
                 let v = resultadoFieds.get(key);
-                if (!resultadoAtual.resultado[key]) {
-                    const v2 = $(`#${v}`);
-                    resultadoAtual.resultado[key] = v2 ? v2.val() : '';
-                }
+
+                const v2 = $(`#${v}`);
+                resultadoAtual.resultado[key] = v2 ? v2.val() : '';
+
             }
 
             const dt = $(`#date`).val();
@@ -356,19 +361,19 @@
                 let value = $('#' + event.target.id).val();
                 resultadoAtual.data = new Date(value);
             })
-            $('#queixa').on('keyup', (event) => {
+            $('#queixa').on('keyup change', (event) => {
                 changeLaudo(event, undefined, 'queixa')
             })
-            $('#colesterol').on('keyup', (event) => {
+            $('#colesterol').on('keyup change', (event) => {
                 changeResultado(event, undefined, 'colesterol')
             })
-            $('#hdl').on('keyup', (event) => {
+            $('#hdl').on('keyup change', (event) => {
                 changeResultado(event, undefined, 'hdl')
             })
-            $('#triglicerides').on('keyup', (event) => {
+            $('#triglicerides').on('keyup change', (event) => {
                 changeResultado(event, undefined, 'triglicerides')
             })
-            $('#ldl').on('keyup', (event) => {
+            $('#ldl').on('keyup change', (event) => {
                 changeResultado(event, undefined, 'ldl')
             })
 
@@ -376,7 +381,7 @@
 
 
         function initUser() {
-            $('#name').on('keyup', (event) => {
+            $('#name').on('keyup change', (event) => {
                 changeUser(event, undefined, 'nome')
             });
 
@@ -390,19 +395,19 @@
                     usuarioAtual.sexo = 'FEMALE'
             })
 
-            $('#end').on('keyup', (event) => {
+            $('#end').on('keyup change', (event) => {
                 changeUser(event, undefined, 'endereco')
             })
 
-            $('#n').on('keyup', (event) => {
+            $('#n').on('keyup change', (event) => {
                 changeUser(event, undefined, 'endereco_numero')
             })
 
-            $('#number').on('keyup', (event) => {
+            $('#number').on('keyup change', (event) => {
                 changeUser(event, celularFormatter, 'telefone')
             })
 
-            $('#cpf').on('keyup', (event) => {
+            $('#cpf').on('keyup change', (event) => {
                 changeUser(event, cpfFomatter, 'cpf')
             })
         }
@@ -566,9 +571,10 @@
                 $(this).val($(this).val().trim());
             });
             init();
-            busca = new bootstrap.Modal('#modalBuscar')
+            busca = new bootstrap.Modal('#modalBuscar');
             $('#modalBuscar').on('shown.bs.modal', function () {
                 buscaIsShowing = true;
+                $("#busca-nome").focus();
             });
             document.body.addEventListener('keydown', (event) => {
                 if (event.key === 'F2') {

@@ -6,6 +6,6 @@ export const AppDataSource = new DataSource({
     database: 'db.sqlite',
     synchronize: true,
     logging: true,
-    entities: [`${__dirname}/**/model/entity/*.{ts, js}`],
-    migrations: [`${__dirname}/**/migrations/*.{ts, js}`],
+    entities: [`${__dirname}/**/model/entity/*.*`],
+    migrations: [`${__dirname}/**/migrations/*.*`],
 })

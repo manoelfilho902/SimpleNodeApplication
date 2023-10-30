@@ -22,6 +22,7 @@ let mainWindow
 app.on('ready', () => {
     mainWindow = new BrowserWindow()
     mainWindow.loadURL('http://localhost:10000')
+    mainWindow.maximize()
     mainWindow.on('close', (event) => {
         mainWindow = null;
     })

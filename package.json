@@ -5,8 +5,8 @@
   "main": "./build/index.js",
   "scripts": {
     "start": "npm run compile && electron ./build/index.js",
-    "compile": "tsc  -build & xcopy /S /E /Y .\\src\\views\\* .\\dist\\views\\ & xcopy /S /E /Y .\\src\\public\\* .\\dist\\public\\ & xcopy /S /E /Y .\\src\\views\\* .\\build\\views\\ & xcopy /S /E /Y .\\src\\public\\* .\\build\\public\\",
-    "build": "npm run compile && electron-builder --win portable"
+    "compile": "tsc  -build && xcopy /S /E /Y .\\src\\views\\* .\\dist\\views\\ & xcopy /S /E /Y .\\src\\public\\* .\\dist\\public\\ & xcopy /S /E /Y .\\src\\views\\* .\\build\\views\\ & xcopy /S /E /Y .\\src\\public\\* .\\build\\public\\",
+    "build": "npm run compile && electron-builder --win"
   },
   "keywords": [],
   "author": "Manoel Batista",
