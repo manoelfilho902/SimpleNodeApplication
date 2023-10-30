@@ -1,11 +1,18 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from "typeorm";
+import { User } from "./User";
 
 @Entity()
-export class Laudo{
+@Unique('laudo_user_json_unique', ['idUsuario', 'json', 'data'])
+export class Laudo {
     @PrimaryGeneratedColumn()
     id: number;
-    @Column({type: 'date'})
+    @JoinColumn()
+    @ManyToOne(() => User, (u) => u.laudos)
+    idUsuario: User
+    @Column({ type: 'date' })
     data: Date;
-    @Column({type: 'text'})
+    @Column({ type: 'text' })
     json: string;
+    @Column({ comment: 'Quixa ou histórico do laudo', default: '' })
+    queixa: string
 }

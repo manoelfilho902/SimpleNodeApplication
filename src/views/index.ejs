@@ -111,7 +111,48 @@
             font-size: 11px;
         }
 
+        .row_seach:hover {
+            background-color: #83A6BF;
+            color: white;
+        }
+
+        .row_seach_impar {
+            background-color: #e1e1e1;
+        }
+
         /* .reftb {} */
+    </style>
+    <style media="print">
+        * {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        button {
+            display: none !important;
+        }
+
+        .container {
+            margin: 0 !important;
+            padding: 0 !important;
+            min-width: 22cm !important;
+            min-height: 29.7cm !important;
+        }
+
+        #queixa {
+            min-height: 5cm;
+        }
+
+        .assinatura {
+            bottom: 25px !important;
+            margin-top: auto;
+        }
+
+        @page {
+            size: portrait;
+            margin: 0;
+        }
     </style>
     <script>
         class user {
@@ -147,6 +188,7 @@
 
 
         let users = [user];
+        let usersSearch = [user];
         let usuarioAtual = new user();
         let resultadoAtual = new Laudo();
 
@@ -156,7 +198,7 @@
             }
 
             $('#name').val(user.nome);
-            $('#cpf').val(user.cpf);
+            $('#cpf').val(cpfFomatter(user.cpf));
             $('#end').val(user.endereco);
             let m = $('#male');
             let f = $('#female');
@@ -169,7 +211,7 @@
                 m.prop('checked', true)
             }
 
-            $('#number').val(user.telefone)
+            $('#number').val(celularFormatter(user.telefone))
             $('#n').val(user.endereco_numero)
             usuarioAtual = user;
         }
@@ -178,6 +220,15 @@
             if (!laudo) {
                 alert('laudo não é válido!')
             }
+            resultadoAtual = laudo;
+
+            const resultado = laudo['resultado']
+            $('#queixa').val(laudo['queixa']);
+            $('#date').val(laudo['data'].split("T")[0]);
+            $('#colesterol').val(resultado['colesterol']);
+            $('#hdl').val(resultado['hdl']);
+            $('#triglicerides').val(resultado['triglicerides']);
+            $('#ldl').val(resultado['ldl']);
         }
 
 
@@ -191,34 +242,113 @@
             initLaudo();
 
             $('#gen').on('click', (event) => {
-                fetch('/data/save_user', {
-                    method: 'POST',
-                    body: JSON.stringify(usuarioAtual),
-                    headers: {
-                        "Content-Type": "application/json;charset=utf-8"
-                    }
-                }).catch(err => alert(err.message))
+                getAllAndSet(async () => {
+                    usuarioAtual.cpf = usuarioAtual.cpf.replace(/[^0-9]/g, '')
+                    let res = await fetch('/data/save_user', {
+                        method: 'POST',
+                        body: JSON.stringify(usuarioAtual),
+                        headers: {
+                            "Content-Type": "application/json;charset=utf-8"
+                        }
+                    }).catch(err => alert(err.message))
 
-                resultadoAtual['json'] = JSON.stringify(resultadoAtual.resultado);
-                
-
-                fetch('/data/save_laudo', {
-                    method: 'POST',
-                    body: JSON.stringify(resultadoAtual),
-                    headers: {
-                        "Content-Type": "application/json;charset=utf-8"
-                    }
-                }).catch(err => alert(err.message))
-            })
+                    resultadoAtual['json'] = JSON.stringify(resultadoAtual.resultado);
+                    const user = await res.json();
+                    resultadoAtual['idUsuario'] = user['id'];
+                    fetch('/data/save_laudo', {
+                        method: 'POST',
+                        body: JSON.stringify(resultadoAtual),
+                        headers: {
+                            "Content-Type": "application/json;charset=utf-8"
+                        }
+                    }).then(res =>{
+                        window.print();
+                    }).catch(err => alert(err.message))
+                })
+            });
 
             $('#date').val(new Date().toISOString().split("T")[0])
-            if(!resultadoAtual.data){
+
+            if (!resultadoAtual.data) {
                 resultadoAtual.data = new Date($('#date').val());
             }
+
+            $('#busca-nome').on('keyup', (event) => {
+                searchLaudos()
+            })
+            $('#busca-cpf').on('keyup', (event) => {
+                $('#busca-cpf').val(cpfFomatter(event.target.value))
+                searchLaudos()
+            })
         }
 
-        function getAllAndSet() {
-            const userFields = ['name', 'male', 'end', 'n', 'number'];
+
+        //'name', 'male', 'end', 'n', 'number'
+        function getAllAndSet(callback) {
+            const userFields = new Map([
+                ["nome", 'name'],
+                ["cpf", 'cpf'],
+                ["endereco", 'end'],
+                ["endereco_numero", 'n'],
+                ["telefone", 'number'],
+                ["sexo", 'male']
+            ]);
+
+
+            for (let key of userFields.keys()) {
+                let v = userFields.get(key);
+                if (key === 'sexo') {
+                    const aux = $(`#${v}`).is(':checked');
+                    if (aux) {
+                        usuarioAtual.sexo = 'MALE'
+                    } else {
+                        usuarioAtual.sexo = 'FEMALE'
+
+                    }
+                } else if (key === 'cpf' || key == 'telefone') {
+                    if (!usuarioAtual[key]) {
+                        const v2 = $(`#${v}`);
+                        usuarioAtual[key] = v2 ? v2.val().replace(/[^0-9]/g) : '';
+                    }
+                } else {
+                    if (!usuarioAtual[key]) {
+                        const v2 = $(`#${v}`);
+                        usuarioAtual[key] = v2 ? v2.val() : '';
+                    }
+                }
+            }
+
+            const resultadoFieds = new Map([
+                ["colesterol", 'colesterol'],
+                ["hdl", 'hdl'],
+                ["triglicerides", 'triglicerides'],
+                ["ldl", 'ldl'],
+            ])
+            if (!resultadoAtual) {
+                resultadoAtual = new Laudo();
+            }
+
+            if (!resultadoAtual.resultado) {
+                resultadoAtual.resultado = new Resultado();
+            }
+
+            for (let key of resultadoFieds.keys()) {
+                let v = resultadoFieds.get(key);
+                if (!resultadoAtual.resultado[key]) {
+                    const v2 = $(`#${v}`);
+                    resultadoAtual.resultado[key] = v2 ? v2.val() : '';
+                }
+            }
+
+            const dt = $(`#date`).val();
+            resultadoAtual.data = dt ? new Date(dt).toISOString() : new Date().toISOString();
+
+
+            if (!resultadoAtual.queixa) {
+                const qx = $(`#queixa`).val();
+                resultadoAtual.queixa = qx ? qx : '';
+            }
+            callback();
         }
 
         function initLaudo() {
@@ -269,69 +399,73 @@
             })
 
             $('#number').on('keyup', (event) => {
-                changeUser(event, (value) => {
-                    let aux = value.replace(/[^0-9]/g, '').split('');
-                    let ret = '';
-                    for (let i = 0; i < aux.length; i++) {
-                        if (i == 0) {
-                            ret = ret.concat('(');
-                        }
-                        if (i == 2) {
-                            ret = ret.concat(') ');
-                        }
-                        if (i == 3) {
-                            ret = ret.concat(' ');
-                        }
-                        if (i == 7) {
-                            ret = ret.concat('-');
-                        }
-                        ret = ret.concat(aux[i]);
-                    }
-                    $('#number').val(ret ? ret : value)
-                    return ret ? ret : value;
-                }, 'telefone')
+                changeUser(event, celularFormatter, 'telefone')
             })
 
             $('#cpf').on('keyup', (event) => {
-                changeUser(event, (value) => {
-                    let vl = value ? new String(value).valueOf().replace(/[^0-9]/g, '') : '';
-                    const split = vl.split('');
-                    let retorno = '';
-                    if (split.length <= 11 && split.length > 0) {
-                        for (let i = 0; i < split.length; i++) {
-                            if (i == 3) {
-                                retorno += '.';
-                            }
-                            if (i == 6) {
-                                retorno += '.';
-                            }
-                            if (i == 9) {
-                                retorno += '-';
-                            }
-                            retorno += split[i];
-                        }
-                    } else {
-                        for (let i = 0; i < split.length; i++) {
-                            if (i == 2) {
-                                retorno += '.';
-                            }
-                            if (i == 5) {
-                                retorno += '.';
-                            }
-                            if (i == 8) {
-                                retorno += '/';
-                            }
-                            if (i == 12) {
-                                retorno += '-';
-                            }
-                            retorno += split[i];
-                        }
-                    }
-
-                    $('#cpf').val(retorno ? retorno : value)
-                    return retorno ? retorno : value;
-                }, 'cpf')
+                changeUser(event, cpfFomatter, 'cpf')
             })
+        }
+
+        const celularFormatter = (value) => {
+            let aux = value.replace(/[^0-9]/g, '').split('');
+            let ret = '';
+            for (let i = 0; i < aux.length; i++) {
+                if (i == 0) {
+                    ret = ret.concat('(');
+                }
+                if (i == 2) {
+                    ret = ret.concat(') ');
+                }
+                if (i == 3) {
+                    ret = ret.concat(' ');
+                }
+                if (i == 7) {
+                    ret = ret.concat('-');
+                }
+                ret = ret.concat(aux[i]);
+            }
+            $('#number').val(ret ? ret : value)
+            return ret ? ret : value;
+        }
+
+        const cpfFomatter = (value) => {
+            let vl = value ? new String(value).valueOf().replace(/[^0-9]/g, '') : '';
+            const split = vl.split('');
+            let retorno = '';
+            if (split.length <= 11 && split.length > 0) {
+                for (let i = 0; i < split.length; i++) {
+                    if (i == 3) {
+                        retorno += '.';
+                    }
+                    if (i == 6) {
+                        retorno += '.';
+                    }
+                    if (i == 9) {
+                        retorno += '-';
+                    }
+                    retorno += split[i];
+                }
+            } else {
+                for (let i = 0; i < split.length; i++) {
+                    if (i == 2) {
+                        retorno += '.';
+                    }
+                    if (i == 5) {
+                        retorno += '.';
+                    }
+                    if (i == 8) {
+                        retorno += '/';
+                    }
+                    if (i == 12) {
+                        retorno += '-';
+                    }
+                    retorno += split[i];
+                }
+            }
+
+            $('#cpf').val(retorno ? retorno : value)
+            return retorno ? retorno : value;
         }
 
         function changeUser(event, mask, field) {
@@ -358,9 +492,99 @@
             resultadoAtual.resultado[field] = value;
         }
 
-        setTimeout(() => {
-            init()
-        }, 150);
+        function searchLaudos() {
+            const container = $('#search-laudos');
+            const nome = $('#busca-nome');
+            const cpf = $('#busca-cpf');
+
+            fetch(`/data/find_laudo_by_user?cpf=${cpf.val() ? cpf.val().replace(/[^0-9]/g) : ''}&nome=${nome.val() ? nome.val() : ''}`, {
+                method: 'GET'
+            }).then(async res => {
+                if (res.status == 200) {
+                    const u = await res.json();
+                    container.html('');
+                    if (u && u.length > 0) {
+                        usersSearch = u;
+
+                        u.forEach(element => {
+                            element['laudos'].forEach((l, i) => {
+                                container.append(`
+                                <div class="row m-0 g-0 p-2 row_seach ${i % 2 == 0 ? '' : 'row_seach_impar'}" ondblclick="changeAll(event)" id="${element['id']}-${l['id']}" >
+                                    <div class="col">${element['nome']}</div>
+                                    <div class="col">${cpfFomatter(element['cpf'])}</div>
+                                    <div class="col">${celularFormatter(element['telefone'])}</div>
+                                    <div class="col">${new Date(l['data']).toISOString().substr(0, 10).split('-').reverse().join('/')}</div>
+                                </div>                            
+                                `)
+                            })
+                        });
+                    } else {
+                        container.append(`
+                        <div class="row m-0 g-0 p-2">
+                            <div class="col"></div>
+                            <div class="col text-center" style="background-color: var(--border-color); color: black; border-radius: 5%;">
+                                Nada encontrado!
+                            </div>
+                            <div class="col"></div>
+                        </div>                            
+                        `)
+                    }
+                }
+            }).catch(err => {
+                alert(err.message)
+            })
+        }
+
+        function changeAll(event) {
+            var id;
+            if (!event.target.id) {
+                id = event.target.parentElement.id.split(/-/g);
+            } else {
+                id = event.target.id.split(/-/g);
+            }
+
+            const us = usersSearch.find(u => `${u.id}` == id[0]);
+            const res = us['laudos'].find(l => `${l.id}` == id[1]);
+            res['resultado'] = JSON.parse(res['json']);
+
+
+            setUser(us)
+            setLaudo(res);
+            //Laudo
+
+
+            if (busca) {
+                busca.hide();
+                buscaIsShowing = false;
+            }
+        }
+
+        var busca;
+        var buscaIsShowing = false;
+        $('document').ready(function () {
+            $('textarea').each(function () {
+                $(this).val($(this).val().trim());
+            });
+            init();
+            busca = new bootstrap.Modal('#modalBuscar')
+            $('#modalBuscar').on('shown.bs.modal', function () {
+                buscaIsShowing = true;
+            });
+            document.body.addEventListener('keydown', (event) => {
+                if (event.key === 'F2') {
+                    if (busca) {
+                        if (buscaIsShowing) {
+                            busca.hide();
+                            buscaIsShowing = false;
+                        } else {
+                            busca.show();
+                        }
+                    }
+                }
+            })
+
+        });
+
     </script>
     <script type="module">
         import Autocomplete from "https://cdn.jsdelivr.net/gh/lekoala/bootstrap5-autocomplete@master/autocomplete.js";
@@ -467,7 +691,7 @@
         <div class="row g-0 m-0 mt-2 form-top-strong">
             <div class="flex-row d-flex">
                 <span class="m-1" style="height: 15px; width: 15px; background-color: var(--border-color);"></span>
-                <label for="area-wrapper" class="form-label lbl"> Queixa principal e Histórico do paciênte</label>
+                <label for="area-wrapper" class="form-label lbl"> Queixa principal e Histórico do paciente</label>
             </div>
             <div class="form-floating" id="area-wrapper">
                 <textarea class="form-control p-1 inp-head" name="" id="queixa">
@@ -651,7 +875,7 @@
                     </div>
                 </div>
             </div>
-            <div class="row g-0 p-0" style="margin-top: 100px;">
+            <div class="row g-0 p-0 assinatura" style="margin-top: 100px;">
                 <div class="col"></div>
                 <div class="col text-center" style="border-top: 1px solid rgba(0, 0, 0, 0.3);">
                     <p class="m-0"><span style="font-weight: bolder; font-size: 10px !important;">Natilucia Brito
@@ -670,6 +894,50 @@
             </div>
         </div>
     </div>
+
+    <div class="modal modal-lg" id="modalBuscar">
+        <div class="modal-dialog">
+            <div class="modal-content" style="border-top: 5px solid var(--border-color);">
+                <div class="modal-body">
+                    <div class="row m-0 g-0">
+                        <div class="col p-2">
+                            <label class="form-label" for="busca-nome">
+                                Nome do paciente
+                            </label>
+                            <input class="form-control" id="busca-nome" type="text">
+                        </div>
+                        <div class="col-3 p-2">
+                            <label class="form-label" for="busca-cpf">
+                                CPF do paciente
+                            </label>
+                            <input class="form-control" id="busca-cpf" type="text">
+                        </div>
+                        <div class="col-4"></div>
+                    </div>
+                    <div style="border: 0.5mm solid rgba(0, 0, 0, 0.3);">
+                        <div class="row m-0 g-0 p-2"
+                            style="background-color: #c1c1c1; border-bottom: 0.5mm solid rgba(0, 0, 0, 0.3); font-weight: bold !important;">
+                            <div class="col">Nome</div>
+                            <div class="col">CPF</div>
+                            <div class="col">Telefone</div>
+                            <div class="col">Data</div>
+                        </div>
+                        <div id="search-laudos">
+                            <div class="row m-0 g-0 p-2">
+                                <div class="col"></div>
+                                <div class="col text-center"
+                                    style="background-color: var(--border-color); color: black; border-radius: 5%;">
+                                    Nada encontrado!
+                                </div>
+                                <div class="col"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 
 </html>

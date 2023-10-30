@@ -126,3 +126,6 @@ a
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+/build/
+
+/gerador-win32-x64/

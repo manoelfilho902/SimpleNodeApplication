@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm"
+import { Laudo } from "./laudo";
 
-export enum sexo{
-    M='MALE',F='FEMALE'
+export enum sexo {
+    M = 'MALE', F = 'FEMALE'
 }
 
 @Entity()
@@ -13,14 +14,16 @@ export class User {
     nome: string;
     @Column()
     cpf: string;
-    @Column({nullable: true})
+    @Column({ nullable: true })
     idade: number;
     @Column()
     endereco: string;
-    @Column({nullable: true})
+    @Column({ nullable: true })
     endereco_numero: string
     @Column()
     telefone: string;
-    @Column({enum: sexo})
+    @Column({ enum: sexo })
     sexo: sexo;
+    @OneToMany(() => Laudo, (l) => l.idUsuario)
+    laudos: Laudo[]
 }
